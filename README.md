@@ -385,6 +385,12 @@ FUNCTION hex_to_7seg(hex : STD_LOGIC_VECTOR(3 DOWNTO 0)) RETURN STD_LOGIC_VECTOR
 
 # Conexión física de la maqueta
 
+## Montaje en protoboard
+
+![Montaje en protoboard](docs/diagramas/montaje_protoboard.png)
+
+## Esquemático
+
 ![Conexión física](docs/diagramas/conexion_fisica.png)
 
 ```text
