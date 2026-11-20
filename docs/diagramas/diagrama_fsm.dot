@@ -1,0 +1,24 @@
+digraph FSM {
+  graph [fontname="Helvetica", bgcolor="white", nodesep=0.3, ranksep=0.45];
+  node  [shape=ellipse, style=filled, fillcolor="#eef3fa", color="#1f4e8c", fontname="Helvetica", fontsize=10, penwidth=1.3];
+  edge  [fontname="Helvetica", fontsize=8, color="#444444", arrowsize=0.7];
+  RST [shape=point, width=0.12, color=black];
+  FETCH  [label="S_FETCH\nIR←ROM[PC]\nPC←PC+1", fillcolor="#fde9d9", color="#b45f06"];
+  DECODE [label="S_DECODE"];
+  ALU    [label="S_EXEC_ALU\nRa←ALU, Z"];
+  LDI    [label="S_EXEC_LDI\nRa←imm, PC+1"];
+  LOAD   [label="S_EXEC_LOAD\nRa←MEM[Rb]"];
+  STORE  [label="S_EXEC_STORE\nMEM[Rb]←Ra"];
+  JUMP   [label="S_EXEC_JUMP\nPC←dir / PC+1"];
+  NOP    [label="S_EXEC_NOP"];
+  RST -> FETCH [label=" rst_n=0"];
+  FETCH -> DECODE;
+  DECODE -> ALU   [label="ADD…MOV"];
+  DECODE -> LDI   [label="LDI"];
+  DECODE -> LOAD  [label="LOAD"];
+  DECODE -> STORE [label="STORE"];
+  DECODE -> JUMP  [label="JMP/JZ/JNZ"];
+  DECODE -> NOP   [label="NOP"];
+  {rank=same; ALU; LDI; LOAD; STORE; JUMP; NOP;}
+  ALU -> FETCH; LDI -> FETCH; LOAD -> FETCH; STORE -> FETCH; JUMP -> FETCH; NOP -> FETCH;
+}

@@ -1,0 +1,36 @@
+digraph G {
+  graph [rankdir=LR, fontname="Helvetica", fontsize=10, nodesep=0.25, ranksep=0.35, bgcolor="white", splines=ortho, newrank=true];
+  node  [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=9, fillcolor="#eef3fa", color="#1f4e8c", penwidth=1.2];
+  edge  [fontname="Helvetica", fontsize=7, color="#555555", arrowsize=0.6];
+
+  subgraph cluster_core {
+    label="Microcontrolador (núcleo RISC 8 bits, Harvard)"; fontsize=9; style="rounded,dashed"; color="#1f4e8c";
+    PC  [label="ProgramCounter\nPC (8 b)"];
+    ROM [label="MemoriaPrograma\nROM 64×8"];
+    IR  [label="Registro8Bit\nIR"];
+    CU  [label="ControlUnit\nFSM (8 estados)", fillcolor="#fde9d9", color="#b45f06"];
+    RF  [label="BancoRegistros\nR0–R3"];
+    ALU [label="ALU 8 b\n+ bandera Z"];
+    MUX [label="MUX\nALU/MEM/IMM", shape=trapezium, style=filled];
+  }
+  MAP [label="MapaMemoria\ndecodificador", fillcolor="#e7f3e7", color="#38761d"];
+  RAM [label="MemoriaDatos\nRAM 16×8\n0x00–0x0F", fillcolor="#e7f3e7", color="#38761d"];
+  IO  [label="PuertosES\nIN 0xF0 · OUT 0xF1", fillcolor="#e7f3e7", color="#38761d"];
+  EXT_IN  [label="SW0, SW1, SW9\nLDR, Temp.", shape=box, style="filled", fillcolor="#ffffff"];
+  EXT_OUT [label="Iluminación\nVentilación", shape=box, style="filled", fillcolor="#ffffff"];
+
+  PC -> ROM [xlabel="dir"];
+  ROM -> IR [xlabel="instr"];
+  ROM -> MUX [xlabel="imm"];
+  ROM -> PC [xlabel="salto", constraint=false];
+  IR -> CU [xlabel="opcode"];
+  IR -> RF [xlabel="Ra,Rb"];
+  RF -> ALU;
+  ALU -> MUX;
+  ALU -> CU [xlabel="Z", constraint=false];
+  MUX -> RF [constraint=false];
+  RF -> MAP [xlabel="dir=Rb\ndato=Ra"];
+  MAP -> RAM; MAP -> IO;
+  MAP -> MUX [xlabel="LOAD", constraint=false];
+  EXT_IN -> IO; IO -> EXT_OUT;
+}
