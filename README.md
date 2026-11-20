@@ -482,8 +482,9 @@ Microcontrolador_RISC_8bits/
 ├── sim/                        Verificación
 │   ├── tb_Microcontrolador.vhd
 │   ├── tb_top_system.vhd
-│   ├── run_ghdl.sh             Simulación con GHDL
-│   └── run_modelsim.do         Simulación con ModelSim
+│   ├── run_modelsim.do         Simulación con ModelSim-Altera
+│   ├── modelsim_transcript.txt Resultado de la simulación en ModelSim
+│   └── run_ghdl.sh             Simulación con GHDL (alternativa)
 ├── asm/
 │   ├── programa.asm            Programa de control
 │   └── ensamblador.py          Ensamblador -> MemoriaPrograma.vhd
@@ -508,9 +509,10 @@ Microcontrolador_RISC_8bits/
 2. *Processing → Start Compilation*.
 3. *Tools → Programmer*, seleccione `output_files/top_system.sof` y programe la DE0 por USB-Blaster.
 
-**ModelSim-Altera** (desde la carpeta raíz del proyecto):
+**ModelSim-Altera 10.1d** (en la consola de ModelSim):
 
 ```tcl
+cd C:/Users/Usuario/Documents/GitHub/Microcontrolador_RISC_8bits
 do sim/run_modelsim.do
 ```
 
@@ -524,35 +526,52 @@ do sim/run_modelsim.do
 
 # Evidencia de simulación
 
-## Simulación completa (pruebas T1 a T7)
+Las simulaciones se ejecutaron en **ModelSim-Altera 10.1d** (Quartus II 13.1) con el script [`sim/run_modelsim.do`](sim/run_modelsim.do), que compila todo el diseño, corre `tb_Microcontrolador` y luego `tb_top_system` con las señales principales en la ventana de ondas. El registro completo está en [`sim/modelsim_transcript.txt`](sim/modelsim_transcript.txt).
+
+## Simulación completa en ModelSim (pruebas T1 a T7)
+
+Entradas (switches y sensores), estado de la CPU, bus de datos y actuadores durante las 7 pruebas. Abajo, el transcript con todas las pruebas en **PASA**:
+
+![Simulación completa en ModelSim](docs/simulacion/modelsim_completa.png)
+
+## Detalle del ciclo FETCH → DECODE → EXECUTE en ModelSim
+
+Con `SW0 = 1` en modo manual, el programa lee el puerto `0xF0` (`LOAD`, PC `02`), toma el salto `JZ` a `MANUAL` (PC `0A` → `1F`), calcula `AND` con `0x03` y escribe `01` en el puerto `0xF1` (`STORE`, PC `23`, `mem_we = 1`), lo que enciende `luz_out`:
+
+![Detalle de la FSM en ModelSim](docs/simulacion/modelsim_fsm.png)
+
+## Resultado en ModelSim-Altera 10.1d
+
+```text
+# vsim -quiet -t ns work.tb_Microcontrolador
+# ** Note: Iteracion en modo manual: 54 ciclos
+# ** Note: Iteracion en modo automatico (luz+vent): 84 ciclos
+# ** Note: tb_Microcontrolador: 98/98 comprobaciones PASAN
+#    Time: 99870 ns  Iteration: 0  Instance: /tb_microcontrolador
+# vsim -t ns work.tb_top_system
+# ** Note: T1 Reset inicial ... PASA
+# ** Note: T2 Modo manual ... PASA
+# ** Note: T3 Automatico con sensores (GPIO) ... PASA
+# ** Note: T4 Automatico con sensores simulados (SW4) ... PASA
+# ** Note: T5 Vista de puertos (SW7) ... PASA
+# ** Note: T6 Modo lento (SW8) ... PASA
+# ** Note: T7 Reset en funcionamiento ... PASA
+# ** Note: tb_top_system: 7/7 pruebas PASAN, 0 errores
+#    Time: 130650 ns  Iteration: 0  Instance: /tb_top_system
+```
+
+Las advertencias `NUMERIC_STD ... metavalue detected` del transcript aparecen solo en `t = 0 ns`, antes de que el reset fije los registros, y son normales.
+
+Para confirmar que los testbenches detectan errores reales se introdujeron dos fallos a propósito (condición de `JZ` invertida y decodificación errónea del puerto `0xF0`). En ambos casos las pruebas reportaron FALLA.
+
+<details>
+<summary>Gráficas de la simulación generadas a partir del VCD (GHDL)</summary>
 
 ![Simulación completa](docs/simulacion/onda_completa.png)
 
-## Detalle del ciclo FETCH → DECODE → EXECUTE
-
-Con `SW0 = 1` en modo manual, el programa lee el puerto `0xF0` (`LOAD`), toma el salto `JZ` a `MANUAL` (PC `0A` → `1F`), calcula `AND` con `0x03` y escribe `01` en el puerto `0xF1` (`STORE`), lo que enciende `luz_out`:
-
 ![Detalle de la FSM](docs/simulacion/onda_fsm.png)
 
-## Resultado de la simulación
-
-```text
-===== tb_Microcontrolador =====
-Iteración en modo manual: 54 ciclos
-Iteración en modo automático (luz+vent): 84 ciclos
-tb_Microcontrolador: 98/98 comprobaciones PASAN
-===== tb_top_system =====
-T1 Reset inicial ... PASA
-T2 Modo manual ... PASA
-T3 Automático con sensores (GPIO) ... PASA
-T4 Automático con sensores simulados (SW4) ... PASA
-T5 Vista de puertos (SW7) ... PASA
-T6 Modo lento (SW8) ... PASA
-T7 Reset en funcionamiento ... PASA
-tb_top_system: 7/7 pruebas PASAN, 0 errores
-```
-
-Para confirmar que los testbenches detectan errores reales se introdujeron dos fallos a propósito (condición de `JZ` invertida y decodificación errónea del puerto `0xF0`). En ambos casos las pruebas reportaron FALLA.
+</details>
 
 ---
 
@@ -631,7 +650,7 @@ Las únicas advertencias son esperadas: `LEDG[7]` y los puntos decimales están 
 # Herramientas utilizadas
 
 - Quartus II 13.1 Web Edition
-- ModelSim-Altera
+- ModelSim-Altera 10.1d (simulación)
 - GHDL 4.1
 - Python 3 (ensamblador)
 - Tarjeta Terasic DE0 (Cyclone III EP3C16F484C6)
