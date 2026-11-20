@@ -19,7 +19,7 @@ El sistema tiene dos modos de funcionamiento:
 - **Modo manual** (`SW9 = 0`): `SW0` enciende la iluminación y `SW1` la ventilación.
 - **Modo automático** (`SW9 = 1`): el programa enciende la iluminación cuando el sensor de luz detecta oscuridad y la ventilación cuando el sensor de temperatura detecta calor.
 
-Todo el diseño usa un único reloj de 50 MHz, no genera latches y está verificado con cuatro testbenches autoverificables.
+Todo el diseño usa un único reloj de 50 MHz, no genera latches y está verificado con dos testbenches autoverificables.
 
 ---
 
@@ -43,7 +43,7 @@ Todo el diseño usa un único reloj de 50 MHz, no genera latches y está verific
 | Modo manual y modo automático | Programa de control en ensamblador ([ver sección](#programa-de-control)). |
 | Maqueta física | Sensores LDR y de temperatura, lámpara de LED y ventilador de 5 V ([ver conexión](#conexión-física-de-la-maqueta)). |
 | A. Código completo | Carpeta [`rtl/`](rtl/) + proyecto de Quartus (`top_system.qpf/.qsf/.sdc`). |
-| B. Testbench | Carpeta [`sim/`](sim/): 4 testbenches autoverificables (140 comprobaciones). |
+| B. Testbench | Carpeta [`sim/`](sim/): [`tb_top_system.vhd`](sim/tb_top_system.vhd) (sistema completo, pruebas T1–T7) y [`tb_Microcontrolador.vhd`](sim/tb_Microcontrolador.vhd) (núcleo, 98 comprobaciones). |
 | C. Funcionalidad | Pruebas T1–T7 del sistema completo y prueba en la tarjeta DE0. |
 | D. Informe corto (máx. 3 páginas) | [`docs/informe/`](docs/informe/): informe en formato IEEE. |
 
@@ -480,8 +480,6 @@ Microcontrolador_RISC_8bits/
 │   ├── Pantallas.vhd           Displays de 7 segmentos
 │   └── top_system.vhd          Nivel superior para la DE0
 ├── sim/                        Verificación
-│   ├── tb_ALU.vhd
-│   ├── tb_ControlUnit.vhd
 │   ├── tb_Microcontrolador.vhd
 │   ├── tb_top_system.vhd
 │   ├── run_ghdl.sh             Simulación con GHDL
@@ -539,10 +537,6 @@ Con `SW0 = 1` en modo manual, el programa lee el puerto `0xF0` (`LOAD`), toma el
 ## Resultado de la simulación
 
 ```text
-===== tb_ALU =====
-tb_ALU: 17/17 vectores PASAN
-===== tb_ControlUnit =====
-tb_ControlUnit: 18/18 secuencias FETCH-DECODE-EXECUTE PASAN
 ===== tb_Microcontrolador =====
 Iteración en modo manual: 54 ciclos
 Iteración en modo automático (luz+vent): 84 ciclos
@@ -600,7 +594,8 @@ Las únicas advertencias son esperadas: `LEDG[7]` y los puntos decimales están 
 | `GeneradorEnable.vhd` | Habilitación de reloj para el modo lento |
 | `reset_sync.vhd` | Sincronización del pulsador de reset |
 | `top_system.vhd` | Integración estructural y pines de la tarjeta |
-| `tb_*.vhd` | Testbenches autoverificables |
+| `tb_top_system.vhd` | Testbench del sistema completo (pines de la DE0, pruebas T1–T7) |
+| `tb_Microcontrolador.vhd` | Testbench del núcleo con modelo de memoria independiente |
 | `programa.asm` / `ensamblador.py` | Programa de control y su ensamblador |
 
 ---
@@ -627,11 +622,9 @@ Las únicas advertencias son esperadas: `LEDG[7]` y los puntos decimales están 
 
 # Validaciones realizadas
 
-- **ALU**: las 9 operaciones, desbordamientos y bandera Zero (17 vectores).
-- **Unidad de control**: secuencia FETCH → DECODE → EXECUTE de los 16 OpCodes y saltos condicionales con Z = 0 y Z = 1.
 - **Núcleo**: programa real contra un modelo de memoria independiente; las 32 combinaciones de modo, switches y sensores; contenido de RAM[0], RAM[1] y RAM[2].
 - **Sistema completo**: reset, modo manual, modo automático con sensores GPIO y simulados, displays, modo lento y reset en funcionamiento.
-- **Prueba de los testbenches**: fallos inyectados a propósito detectados.
+- **Prueba de los testbenches**: los fallos inyectados a propósito (salto `JZ` invertido y puerto `0xF0` mal decodificado) fueron detectados.
 
 ---
 
@@ -654,7 +647,7 @@ Las únicas advertencias son esperadas: `LEDG[7]` y los puntos decimales están 
 - ✔ E/S mapeada en memoria (`0xF0` / `0xF1`)
 - ✔ Modo manual y modo automático
 - ✔ Maqueta con sensores de luz y temperatura, lámpara y ventilador
-- ✔ 4 testbenches autoverificables (140 comprobaciones, 0 errores)
+- ✔ 2 testbenches autoverificables (98 comprobaciones del núcleo + 7 pruebas del sistema, 0 errores)
 - ✔ Informe en formato IEEE
 
 ---
